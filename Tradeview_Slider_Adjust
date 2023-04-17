@@ -1,0 +1,55 @@
+//@version=5
+strategy("MACD Strategy with Adjustable Stop Loss and Take Profit", overlay=true)
+
+// Long Entry Command
+fastLength = input(15, title="Fast Length")
+slowLength = input(13, title="Slow Length")
+MACDLength = input(2, title="MACD Length")
+MACDLength2 = input(2, title="MACD Length 2")
+signalSmoothing = input(16, title="Signal Smoothing")
+signalSmoothing2 = input(3, title="Signal Smoothing 2")
+MACDDiffType = input(highest, title="MACD Diff Type")
+showBreakoutSignals = input(true, title="Show Breakout Signals")
+data = close
+Value = ta.ema(data, fastLength) - ta.ema(data, slowLength)
+Avg = ta.ema(Value, MACDLength)
+Diff = Value - Avg
+Value2 = ta.ema(Diff, signalSmoothing)
+Avg2 = ta.ema(Value2, MACDLength2)
+Diff2 = Value2 - Avg2
+BuySignal = plot(showBreakoutSignals and ta.crossover(Diff2, 0) ? Diff2 : na, title="Buy Signal", color=color.green, style=plot.style_histogram)
+
+// Long Exit Command
+ExitLength = input(3, title="Exit Length")
+ExitLength2 = input(1, title="Exit Length 2")
+Value3 = ta.ema(data, ExitLength) - ta.ema(data, ExitLength2)
+Avg3 = ta.ema(Value3, MACDLength)
+Diff3 = Value3 - Avg3
+SellSignal = plot(showBreakoutSignals and ta.crossover(Diff3, 0) ? Diff3 : na, title="Sell Signal", color=color.red, style=plot.style_histogram)
+
+// Short Entry Command
+ShortSignal = plot(showBreakoutSignals and ta.crossunder(Diff2, 0) ? Diff2 : na, title="Short Signal", color=color.green, style=plot.style_histogram)
+
+// Short Exit Command
+ShortExitSignal = plot(showBreakoutSignals and ta.crossunder(Diff3, 0) ? Diff3 : na, title="Short Exit Signal", color=color.red, style=plot.style_histogram)
+
+// Alerts
+alertcondition(ta.crossover(Diff2, 0), title="Long Entry", message="Long Entry")
+alertcondition(ta.crossover(Diff3, 0), title="Long Exit", message="Long Exit")
+alertcondition(ta.crossunder(Diff2, 0), title="Short Entry", message="Short Entry")
+alertcondition(ta.crossunder(Diff3, 0), title="Short Exit", message="Short Exit")
+
+// Position Size and Stop Loss
+startYear = input(2018, title="Start Year")
+startMonth = input(1, title="Start Month")
+startDay = input(1, title="Start Day")
+endYear = input(3333, title="End Year")
+endMonth = input(12, title="End Month")
+endDay = input(31, title="End Day")
+tradeStartDate = timestamp(year(startYear), month(startMonth), day(startDay), 0, 0, 0)
+tradeEndDate = timestamp(year(endYear), month(endMonth), day(endDay), 0, 0, 0)
+equity = strategy.equity
+orderSize = max(1, floor(0.1 * equity / close))
+stopPrice = input(0.97, title="Stop Loss %") * close
+
+long
